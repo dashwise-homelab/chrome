@@ -1,2 +1,3 @@
 # Dashwise Chrome
-> Disclaimer: This repo has moved to https://github.com/dashwise-homelab/chrome
+
+> This extension is still in very early testing, so proceed with caution
