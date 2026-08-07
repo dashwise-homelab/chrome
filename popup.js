@@ -367,6 +367,56 @@
     setTimeout(() => { status.textContent = ''; }, 2000);
   }
 
+  async function refreshToken() {
+    const result = await storageGet(['dashwiseBaseUrl']);
+    const baseUrl = result.dashwiseBaseUrl || '';
+    const statusEl = document.getElementById('refresh-token-status');
+    if (!baseUrl) {
+      statusEl.textContent = 'No server URL configured. Sign in first.';
+      statusEl.style.color = '#e74c3c';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      return;
+    }
+
+    let origin;
+    try { origin = new URL(baseUrl).origin; } catch {
+      statusEl.textContent = 'Invalid server URL';
+      statusEl.style.color = '#e74c3c';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      return;
+    }
+
+    const allTabs = await new Promise((resolve) => chrome.tabs.query({}, resolve));
+    const targetTab = allTabs.find((t) => t.url && t.url.startsWith(origin));
+
+    if (!targetTab) {
+      statusEl.textContent = 'Open ' + origin + ' in a browser tab first';
+      statusEl.style.color = '#e74c3c';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      return;
+    }
+
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: targetTab.id },
+        func: () => localStorage.getItem('pb_token'),
+      });
+      const token = results?.[0]?.result;
+      if (token) {
+        await storageSet({ dashwiseToken: token });
+        statusEl.textContent = 'Token refreshed from page';
+        statusEl.style.color = '#2ecc71';
+      } else {
+        statusEl.textContent = 'No pb_token found on page';
+        statusEl.style.color = '#e74c3c';
+      }
+    } catch (err) {
+      statusEl.textContent = err.message;
+      statusEl.style.color = '#e74c3c';
+    }
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
+
   async function handleLogout() {
     if (clockInterval) clearInterval(clockInterval);
     if (notifInterval) clearInterval(notifInterval);
@@ -396,6 +446,7 @@
     document.getElementById('replace-new-tab').addEventListener('change', updateNewTabOptionsVisibility);
     document.getElementById('save-url-btn').addEventListener('click', saveNewTabSettings);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
+    document.getElementById('refresh-token-btn').addEventListener('click', refreshToken);
 
     document.getElementById('action-home-link').addEventListener('click', addToHomeLinks);
     document.getElementById('action-add-link').addEventListener('click', openAddLink);

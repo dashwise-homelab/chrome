@@ -14,7 +14,7 @@
       background: #0f0f13;
       color: #e8e8ed;
     }
-    div#loading-cover {
+    .loading-cover {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -67,7 +67,7 @@
   </style>
 </head>
 <body>
-  <div id="loading-cover">
+  <div class="loading-cover">
     <div class="spinner"></div>
     <p>Loading Dashwise...</p>
   </div>
@@ -75,7 +75,6 @@
     <h1>Dashwise is ready</h1>
     <p id="fallback-message">This Dashwise server cannot be embedded in the new tab page.</p>
   </div>
-  <iframe id="content-frame"></iframe>
   <script src="newtab.js"></script>
 </body>
 </html>

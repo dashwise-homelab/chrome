@@ -85,6 +85,17 @@
   <button id="logout-btn" class="btn btn-danger">Log Out</button>
   <div id="logout-status"></div>
 
+  <hr>
+
+  <div class="field">
+    <label>Session Token</label>
+    <div class="info" style="margin-bottom:4px;">
+      Pull <code>pb_token</code> from localStorage of an open Dashwise tab.
+    </div>
+    <button id="refresh-token-btn" class="btn btn-primary">Refresh Token</button>
+    <div id="refresh-token-status" style="margin-top:10px;color:#2ecc71;font-size:13px;min-height:20px;"></div>
+  </div>
+
   <script src="options.js"></script>
 </body>
 </html>
