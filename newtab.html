@@ -31,12 +31,49 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+    }
+    .fallback button {
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      background: rgba(15,15,19,0.78);
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      padding: 9px 14px;
+      backdrop-filter: blur(12px);
+    }
+    .fallback {
+      display: none;
+      max-width: 460px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    body.frame-failed .fallback { display: block; }
+    body.frame-failed #loading-cover { display: none; }
+    body.loaded #loading-cover {
+      display: none;
+    }
+    body.loaded iframe {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="loading-cover">
     <div class="spinner"></div>
-    <p>Opening Dashwise...</p>
+    <p>Loading Dashwise...</p>
+  </div>
+  <div id="fallback" class="fallback">
+    <h1>Dashwise is ready</h1>
+    <p id="fallback-message">This Dashwise server cannot be embedded in the new tab page.</p>
   </div>
   <script src="newtab.js"></script>
 </body>

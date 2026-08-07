@@ -314,15 +314,12 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           Add to Links
         </div>
-        <div class="action-item" id="action-read-later">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          Save to Read Later
-        </div>
         <div class="action-item" id="action-qr">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Generate QR Code
         </div>
       </div>
+      <div id="qr-preview" style="display:none;margin-top:12px;text-align:center;"></div>
     </div>
 
     <div class="section">
@@ -340,8 +337,24 @@
       <h2>Settings</h2>
     </div>
     <div class="settings-row">
-      <label>New Tab URL</label>
-      <input type="url" id="new-tab-url" placeholder="https://example.com">
+      <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:14px;color:var(--text);">
+        <input type="checkbox" id="replace-new-tab" style="width:auto;">
+        Replace default new tab
+      </label>
+    </div>
+    <div id="new-tab-options">
+      <div class="settings-row">
+        <label>Page</label>
+        <select id="new-tab-page" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none;appearance:auto;width:100%;">
+          <option value="home">Home</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:14px;color:var(--text);">
+          <input type="checkbox" id="new-tab-open-search" style="width:auto;">
+          Open search
+        </label>
+      </div>
     </div>
     <div id="settings-status" class="success" style="min-height:0;"></div>
     <div class="settings-actions">

@@ -179,31 +179,6 @@
     }
   }
 
-  async function saveReadLater() {
-    const tab = await getActiveTab();
-    if (!tab || !tab.url) { showToast('No active tab'); return; }
-
-    const item = {
-      title: tab.title || tab.url,
-      url: tab.url,
-      savedAt: new Date().toISOString(),
-    };
-
-    try {
-      await apiFetch('/links/items', {
-        method: 'POST',
-        body: JSON.stringify({ title: item.title, url: item.url, tags: ['read-later'] }),
-      });
-      showToast('Saved to read later');
-    } catch (err) {
-      const existing = await storageGet({ dashwiseReadLater: [] });
-      const items = existing.dashwiseReadLater.filter((saved) => saved.url !== item.url);
-      items.unshift(item);
-      await storageSet({ dashwiseReadLater: items.slice(0, 250) });
-      showToast('Saved locally for read later');
-    }
-  }
-
   // ---- Add Link Screen ----
   let addLinkTab = null;
 
@@ -356,19 +331,36 @@
   function generateQR() {
     getActiveTab().then((tab) => {
       const url = tab ? encodeURIComponent(tab.url) : '';
-      chrome.tabs.create({ url: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + url });
+      const preview = document.getElementById('qr-preview');
+      if (!url) { showToast('No active tab'); return; }
+      preview.style.display = 'block';
+      preview.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + url + '" alt="QR code" style="width:180px;height:180px;border-radius:8px;background:#fff;padding:8px;">';
     });
   }
 
   // ---- Settings ----
-  async function loadNewTabUrl() {
-    const items = await syncGet({ newTabUrl: 'https://www.google.com' });
-    document.getElementById('new-tab-url').value = items.newTabUrl;
+  function buildPageUrl(page) {
+    const root = baseUrl.replace(/\/+$/, '');
+    return page && page !== 'home' ? root + '/' + page.replace(/^\/+/, '') : root;
   }
 
-  async function saveNewTabUrl() {
-    const url = document.getElementById('new-tab-url').value.trim();
-    await syncSet({ newTabUrl: url || 'https://www.google.com' });
+  function updateNewTabOptionsVisibility() {
+    document.getElementById('new-tab-options').style.display = document.getElementById('replace-new-tab').checked ? 'block' : 'none';
+  }
+
+  async function loadNewTabSettings() {
+    const items = await syncGet({ replaceNewTab: true, newTabPage: 'home', newTabOpenSearch: false });
+    document.getElementById('replace-new-tab').checked = !!items.replaceNewTab;
+    document.getElementById('new-tab-page').value = items.newTabPage || 'home';
+    document.getElementById('new-tab-open-search').checked = !!items.newTabOpenSearch;
+    updateNewTabOptionsVisibility();
+  }
+
+  async function saveNewTabSettings() {
+    const replaceNewTab = document.getElementById('replace-new-tab').checked;
+    const newTabPage = document.getElementById('new-tab-page').value || 'home';
+    const newTabOpenSearch = document.getElementById('new-tab-open-search').checked;
+    await syncSet({ replaceNewTab, newTabPage, newTabOpenSearch, newTabUrl: buildPageUrl(newTabPage) });
     const status = document.getElementById('settings-status');
     status.textContent = 'Saved';
     status.style.color = '#2ecc71';
@@ -445,19 +437,19 @@
     document.getElementById('login-btn').addEventListener('click', handleLogin);
 
     document.getElementById('settings-btn').addEventListener('click', () => {
-      loadNewTabUrl();
+      loadNewTabSettings();
       showScreen('settings');
     });
     document.getElementById('settings-back').addEventListener('click', () => {
       showScreen('main');
     });
-    document.getElementById('save-url-btn').addEventListener('click', saveNewTabUrl);
+    document.getElementById('replace-new-tab').addEventListener('change', updateNewTabOptionsVisibility);
+    document.getElementById('save-url-btn').addEventListener('click', saveNewTabSettings);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
     document.getElementById('refresh-token-btn').addEventListener('click', refreshToken);
 
     document.getElementById('action-home-link').addEventListener('click', addToHomeLinks);
     document.getElementById('action-add-link').addEventListener('click', openAddLink);
-    document.getElementById('action-read-later').addEventListener('click', saveReadLater);
     document.getElementById('action-qr').addEventListener('click', generateQR);
 
     document.getElementById('add-link-back').addEventListener('click', closeAddLink);
