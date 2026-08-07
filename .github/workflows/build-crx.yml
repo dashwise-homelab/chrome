@@ -1,0 +1,55 @@
+name: Build Chrome Extension Package
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-crx:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    env:
+      CRX_PRIVATE_KEY_B64: ${{ secrets.CRX_PRIVATE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build CRX into packages
+        run: |
+          set -euo pipefail
+
+          EXTENSION_NAME="$(node -p "require('./manifest.json').name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'extension'")"
+          EXTENSION_VERSION="$(node -p "require('./manifest.json').version")"
+
+          BUILD_DIR="$RUNNER_TEMP/chrome-extension"
+          PACKAGES_DIR="$GITHUB_WORKSPACE/packages"
+          KEY_PATH="$RUNNER_TEMP/extension.pem"
+
+          mkdir -p "$BUILD_DIR" "$PACKAGES_DIR"
+
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'packages/' \
+            "$GITHUB_WORKSPACE/" "$BUILD_DIR/"
+
+          if [[ -n "${CRX_PRIVATE_KEY_B64}" ]]; then
+            printf '%s' "$CRX_PRIVATE_KEY_B64" | base64 --decode > "$KEY_PATH"
+            google-chrome --no-sandbox --pack-extension="$BUILD_DIR" --pack-extension-key="$KEY_PATH"
+          else
+            google-chrome --no-sandbox --pack-extension="$BUILD_DIR"
+          fi
+
+          mv "${BUILD_DIR}.crx" "$PACKAGES_DIR/${EXTENSION_NAME}-${EXTENSION_VERSION}.crx"
+          (cd "$BUILD_DIR" && zip -qr "$PACKAGES_DIR/${EXTENSION_NAME}-${EXTENSION_VERSION}.zip" .)
+
+      - name: Upload packages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: packages/
+          if-no-files-found: error
