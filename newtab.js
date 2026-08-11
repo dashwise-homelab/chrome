@@ -1,4 +1,5 @@
 const DEFAULT_DASHWISE_URL = 'https://www.google.com';
+const FOCUS_RELOAD_PARAM = 'dashwise-focus';
 let dashwiseUrl = DEFAULT_DASHWISE_URL;
 
 function normalizeUrl(url) {
@@ -8,9 +9,7 @@ function normalizeUrl(url) {
 
 function buildPageUrl(page, baseUrl) {
   const root = normalizeUrl(baseUrl).replace(/\/+$/, '');
-  return page && page !== 'home'
-    ? root + '/' + page.replace(/^\/+/, '')
-    : root;
+  return root + '/' + (page || 'home').replace(/^\/+/, '');
 }
 
 function setSearchMode(url, enabled) {
@@ -23,32 +22,14 @@ function setSearchMode(url, enabled) {
   return parsed.toString();
 }
 
-function isDashboardUrl(url, baseUrl) {
-  const target = new URL(url);
-  const dashboard = new URL(normalizeUrl(baseUrl));
-  return target.origin === dashboard.origin && target.pathname === dashboard.pathname;
-}
+function needsFocusReload() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.has(FOCUS_RELOAD_PARAM)) return false;
 
-function focusNewTab() {
-  window.focus();
-  document.body.focus();
-}
-
-function loadFrame(url) {
-  const iframe = document.getElementById('content-frame');
-  let loaded = false;
-
-  document.body.classList.remove('loaded', 'frame-failed');
-  iframe.onload = () => {
-    loaded = true;
-    document.body.classList.add('loaded');
-    focusNewTab();
-  };
-  iframe.src = url;
-
-  setTimeout(() => {
-    if (!loaded) document.body.classList.add('frame-failed');
-  }, 5000);
+  // Chrome grants page focus only after initial new-tab navigation.
+  url.searchParams.set(FOCUS_RELOAD_PARAM, '1');
+  window.location.search = url.search;
+  return true;
 }
 
 function loadDashwise() {
@@ -69,18 +50,13 @@ function loadDashwise() {
           !!items.newTabOpenSearch
         );
 
-        focusNewTab();
-        if (!isDashboardUrl(pageUrl, dashwiseUrl)) {
-          window.location.replace(pageUrl);
-          return;
-        }
-
-        loadFrame(pageUrl);
+        window.location.replace(pageUrl);
       });
     }
   );
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (needsFocusReload()) return;
   loadDashwise();
 });

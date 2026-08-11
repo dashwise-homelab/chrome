@@ -1,7 +1,7 @@
 (function () {
   function buildPageUrl(page, baseUrl) {
     const root = (baseUrl || '').replace(/\/+$/, '');
-    return page && page !== 'home' ? root + '/' + page.replace(/^\/+/, '') : root;
+    return root + '/' + (page || 'home').replace(/^\/+/, '');
   }
 
   function updateNewTabOptionsVisibility() {
