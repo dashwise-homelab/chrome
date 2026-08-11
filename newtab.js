@@ -1,8 +1,16 @@
-let dashwiseUrl = 'https://www.google.com';
+const DEFAULT_DASHWISE_URL = 'https://www.google.com';
+let dashwiseUrl = DEFAULT_DASHWISE_URL;
 
 function normalizeUrl(url) {
   if (!url) return dashwiseUrl;
   return url.startsWith('http://') || url.startsWith('https://') ? url : 'https://' + url;
+}
+
+function buildPageUrl(page, baseUrl) {
+  const root = normalizeUrl(baseUrl).replace(/\/+$/, '');
+  return page && page !== 'home'
+    ? root + '/' + page.replace(/^\/+/, '')
+    : root;
 }
 
 function setSearchMode(url, enabled) {
@@ -15,6 +23,17 @@ function setSearchMode(url, enabled) {
   return parsed.toString();
 }
 
+function isDashboardUrl(url, baseUrl) {
+  const target = new URL(url);
+  const dashboard = new URL(normalizeUrl(baseUrl));
+  return target.origin === dashboard.origin && target.pathname === dashboard.pathname;
+}
+
+function focusNewTab() {
+  window.focus();
+  document.body.focus();
+}
+
 function loadFrame(url) {
   const iframe = document.getElementById('content-frame');
   let loaded = false;
@@ -23,6 +42,7 @@ function loadFrame(url) {
   iframe.onload = () => {
     loaded = true;
     document.body.classList.add('loaded');
+    focusNewTab();
   };
   iframe.src = url;
 
@@ -32,15 +52,33 @@ function loadFrame(url) {
 }
 
 function loadDashwise() {
-  chrome.storage.sync.get({ replaceNewTab: true, newTabUrl: 'https://www.google.com', newTabOpenSearch: false }, (items) => {
-    if (!items.replaceNewTab) {
-      document.body.classList.add('frame-failed');
-      document.getElementById('fallback-message').textContent = 'Dashwise new tab replacement is disabled in extension settings.';
-      return;
+  chrome.storage.sync.get(
+    { replaceNewTab: true, newTabPage: 'home', newTabUrl: DEFAULT_DASHWISE_URL, newTabOpenSearch: false },
+    (items) => {
+      if (!items.replaceNewTab) {
+        document.body.classList.add('frame-failed');
+        document.getElementById('fallback-message').textContent = 'Dashwise new tab replacement is disabled in extension settings.';
+        return;
+      }
+
+      chrome.storage.local.get({ dashwiseBaseUrl: '' }, (auth) => {
+        // newTabUrl keeps older saved settings working until they are saved again.
+        dashwiseUrl = normalizeUrl(auth.dashwiseBaseUrl || items.newTabUrl);
+        const pageUrl = setSearchMode(
+          buildPageUrl(items.newTabPage, dashwiseUrl),
+          !!items.newTabOpenSearch
+        );
+
+        focusNewTab();
+        if (!isDashboardUrl(pageUrl, dashwiseUrl)) {
+          window.location.replace(pageUrl);
+          return;
+        }
+
+        loadFrame(pageUrl);
+      });
     }
-    dashwiseUrl = normalizeUrl(items.newTabUrl);
-    loadFrame(setSearchMode(dashwiseUrl, !!items.newTabOpenSearch));
-  });
+  );
 }
 
 document.addEventListener('DOMContentLoaded', () => {
