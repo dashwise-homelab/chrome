@@ -376,7 +376,7 @@
   <div id="screen-add-link" class="screen">
     <div class="settings-header" style="margin-bottom:12px;">
       <button id="add-link-back" class="settings-back">&larr;</button>
-      <h2>Add Link</h2>
+      <h2 id="add-link-title">Add Link</h2>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;">
@@ -396,13 +396,13 @@
         </div>
         <div id="add-icon-preview" style="margin-top:4px;min-height:24px;"></div>
       </div>
-      <div class="field">
+      <div class="field" id="add-collection-field">
         <label>Collection</label>
         <select id="add-collection" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none;appearance:auto;">
           <option value="">None</option>
         </select>
       </div>
-      <div class="field">
+      <div class="field" id="add-tags-field">
         <label>Tags (comma separated)</label>
         <input type="text" id="add-tags" placeholder="tag1, tag2, tag3">
       </div>

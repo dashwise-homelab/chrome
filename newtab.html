@@ -66,7 +66,7 @@
     }
   </style>
 </head>
-<body>
+<body tabindex="-1">
   <div class="loading-cover">
     <div class="spinner"></div>
     <p>Loading Dashwise...</p>
@@ -75,6 +75,7 @@
     <h1>Dashwise is ready</h1>
     <p id="fallback-message">This Dashwise server cannot be embedded in the new tab page.</p>
   </div>
+  <iframe id="content-frame" title="Dashwise dashboard"></iframe>
   <script src="newtab.js"></script>
 </body>
 </html>
