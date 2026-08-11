@@ -103,6 +103,7 @@
       showScreen('main');
       startClock();
       loadNotifications();
+      await openPendingLink();
     } catch (err) {
       errEl.textContent = err.message;
     } finally {
@@ -181,10 +182,17 @@
 
   // ---- Add Link Screen ----
   let addLinkTab = null;
+  let addLinkDestination = 'links';
+  let pendingLink = null;
 
-  async function openAddLink() {
-    addLinkTab = await getActiveTab();
+  async function openAddLink(prefill, destination = 'links') {
+    addLinkTab = prefill || await getActiveTab();
     if (!addLinkTab) { showToast('No active tab'); return; }
+    addLinkDestination = destination;
+    const isHomeLinks = destination === 'home-links';
+
+    document.getElementById('add-collection-field').style.display = isHomeLinks ? 'none' : '';
+    document.getElementById('add-tags-field').style.display = isHomeLinks ? 'none' : '';
 
     document.getElementById('add-name').value = addLinkTab.title || '';
     document.getElementById('add-url').value = addLinkTab.url || '';
@@ -192,15 +200,30 @@
     document.getElementById('add-link-error').textContent = '';
     document.getElementById('add-icon-preview').innerHTML = '';
 
-    await Promise.all([loadCollections(), loadTags()]);
+    if (!isHomeLinks) await Promise.all([loadCollections(), loadTags()]);
     await autoDetectIcon();
 
+    document.getElementById('add-link-title').textContent = destination === 'home-links'
+      ? 'Add to Home Links'
+      : 'Add Link';
+    document.getElementById('add-link-save').textContent = destination === 'home-links'
+      ? 'Save to Home Links'
+      : 'Save Link';
     showScreen('add-link');
   }
 
   function closeAddLink() {
     addLinkTab = null;
+    addLinkDestination = 'links';
     showScreen('main');
+  }
+
+  async function openPendingLink() {
+    if (!pendingLink) return;
+    const link = pendingLink;
+    pendingLink = null;
+    await storageRemove(['dashwisePendingLink']);
+    await openAddLink({ title: link.title, url: link.url }, link.destination);
   }
 
   async function loadCollections() {
@@ -292,8 +315,17 @@
 
     const payload = { title: name, url: url };
     if (icon) payload.iconUrl = icon;
-    if (collection) payload.collection = collection;
-    if (tagsRaw) payload.tags = tagsRaw.split(',').map((t) => t.trim()).filter(Boolean);
+
+    if (addLinkDestination === 'home-links') {
+      // Home links must omit collection and tags so the API takes its home path.
+    } else {
+      if (!collection) {
+        errEl.textContent = 'Select a collection to add this link.';
+        return;
+      }
+      payload.collection = collection;
+      if (tagsRaw) payload.tags = tagsRaw.split(',').map((t) => t.trim()).filter(Boolean);
+    }
 
     console.log('[Dashwise] submit payload:', JSON.stringify(payload));
 
@@ -324,7 +356,7 @@
       errEl.textContent = err.message;
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Save Link';
+      btn.textContent = addLinkDestination === 'home-links' ? 'Save to Home Links' : 'Save Link';
     }
   }
 
@@ -432,6 +464,8 @@
   // ---- Init ----
   async function init() {
     await loadAuth();
+    const pending = await storageGet(['dashwisePendingLink']);
+    pendingLink = pending.dashwisePendingLink || null;
 
     // Event listeners
     document.getElementById('login-btn').addEventListener('click', handleLogin);
@@ -449,7 +483,7 @@
     document.getElementById('refresh-token-btn').addEventListener('click', refreshToken);
 
     document.getElementById('action-home-link').addEventListener('click', addToHomeLinks);
-    document.getElementById('action-add-link').addEventListener('click', openAddLink);
+    document.getElementById('action-add-link').addEventListener('click', () => openAddLink());
     document.getElementById('action-qr').addEventListener('click', generateQR);
 
     document.getElementById('add-link-back').addEventListener('click', closeAddLink);
@@ -468,6 +502,7 @@
       startClock();
       loadNotifications();
       notifInterval = setInterval(loadNotifications, 60000);
+      await openPendingLink();
     } else {
       showScreen('login');
       // Pre-fill saved server URL
